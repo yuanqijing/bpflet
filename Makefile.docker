@@ -1,0 +1,32 @@
+##@ Docker
+
+ALI_REGISTRY ?= registry.cn-hangzhou.aliyuncs.com
+ALI_REGISTRY_NAMESPACE ?= pandora-io
+ALI_REGISTRY_USER ?= "qijing89760"
+ALI_REGISTRY_PASSWORD ?= "pandora12345"
+
+BPFLET_IMAGE_NAME ?= bpflet
+BUILDER_IMAGE_NAME ?= llvm-builder
+
+BPFLET_IMAGE_TAG ?= $(shell git rev-parse --short HEAD)
+BUILDER_IMAGE_TAG ?= build
+DEV_IMAGE_TAG ?= dev
+
+TRACER_IMAGE_FULL_NAME ?= $(ALI_REGISTRY)/$(ALI_REGISTRY_NAMESPACE)/$(BPFLET_IMAGE_NAME):$(BPFLET_IMAGE_TAG)
+BUILDER_IMAGE_FULL_NAME ?= $(ALI_REGISTRY)/$(ALI_REGISTRY_NAMESPACE)/$(BUILDER_IMAGE_NAME):$(BUILDER_IMAGE_TAG)
+TEST_IMAGE_FULL_NAME ?= $(ALI_REGISTRY)/$(ALI_REGISTRY_NAMESPACE)/$(BPFLET_IMAGE_NAME):$(DEV_IMAGE_TAG)
+
+.PHONY: login
+login: ## Login to the registry
+	@docker login -u $(ALI_REGISTRY_USER) -p $(ALI_REGISTRY_PASSWORD) $(ALI_REGISTRY)
+
+
+.PHONY: build-example
+build-example: ## Show examples for building images
+	@echo "  \033[36mBuild builder image:\033[0m \n \
+	   docker build -t $(BUILDER_IMAGE_FULL_NAME) -f Dockerfile.builder . \n \
+	 \033[36mBuild bpflet image:\033[0m \n \
+	   docker build -t $(TRACER_IMAGE_FULL_NAME) -f Dockerfile . \n \
+	 \033[36mBuild dev image:\033[0m \n \
+	   docker build -t $(TEST_IMAGE_FULL_NAME) -f Dockerfile.dev --build-arg ARCH=arm64 .\
+	"

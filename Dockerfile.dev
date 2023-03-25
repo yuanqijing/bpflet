@@ -1,0 +1,33 @@
+# Use the official Ubuntu 22.04 image as a base
+ARG ARCH
+FROM --platform=linux/${ARCH} ubuntu:22.04
+
+# Set environment variables
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+
+# Install Golang and network utilities
+RUN apt-get update && \
+    apt-get install -y golang git curl wget net-tools iproute2 iputils-ping nano vim && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create the Go workspace directory
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH"
+
+# Install dlv (Go debugger) for debugging
+RUN go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy the go.mod and go.sum files into the container
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy the source code into the container
+COPY . .
+
+# Set the command to run your app in debug mode when the container starts
+CMD ["dlv", "debug", "--listen=:2345", "--headless=true", "--api-version=2", "--accept-multiclient"]
